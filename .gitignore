@@ -1,0 +1,9 @@
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+.wrangler/
+data/cache/
+web/data/*
+!web/data/.gitkeep

@@ -1,0 +1,33 @@
+name: 行情快照
+
+on:
+  schedule:
+    # 12:30 / 15:30 Asia/Shanghai = 04:30 / 07:30 UTC。
+    # 12:30 早于 15:05，快照为盘中；15:30 为收盘。节假日由脚本自行跳过。
+    - cron: "30 4 * * 1-5"
+    - cron: "30 7 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+      - name: 生成快照
+        run: python -m pipeline.build
+      - name: 发布到 Cloudflare Pages
+        if: hashFiles('web/data/.publish') != ''
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy web --project-name=close-observe
